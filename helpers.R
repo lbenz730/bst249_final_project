@@ -32,7 +32,7 @@ build_sigma <- function(gamma1, gamma2, sigma2, n_lags) {
       ### Diagonal Entries
       if(l1 == l2) {
         Sigma[l1+1, l2+1] <- sigma2 * exp(-gamma1 * l1)
-      } else if(abs(l1 - l2) == 1) { ### Off diagonals
+      } else if(abs(l1 - l2) >= 1) { ### Off diagonals
         numerator <- sigma2 * (1 - exp(-gamma2 * l1)) * (1 - exp(-gamma2 * l2)) * exp(-gamma1 * (l1 + l2)/2)
         denominator <- 
           sqrt( ((1 - exp(-gamma2 * l1))^2 + exp(-2 * gamma2 * l1)) * ((1 - exp(-gamma2 * l2))^2 + exp(-2 * gamma2 * l2)) )

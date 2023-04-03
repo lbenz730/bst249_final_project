@@ -1,5 +1,21 @@
 library(truncnorm)
 
+### Compute Beta via profile likelihood approach
+update_beta <- function(theta, X, Y, Z, D, beta_prev) {
+  beta <- matrix(NA, nrow = dim(X)[1], ncol = dim(Z)[3])
+  for(c in 1:n_counties) {
+    mle_model <- 
+      glm(Y[c,] ~ Z[c,,] - 1, 
+          family = 'poisson', 
+          offset = exp(X[c,,] %*% theta[c,]) * rep(D[c], n_days),
+          start = beta_prev[c,])
+    beta[c,] <- mle_model$coefficients
+    
+  }
+  return(beta)
+}
+
+
 gibbs_sampler <- function(X, Y, Z, D, 
                           n_samples, 
                           burn_in, 
@@ -94,6 +110,7 @@ gibbs_sampler <- function(X, Y, Z, D,
   }
   
   ### Mu (MLE from pooled poisson regression)
+  ### No convergence right now unless I get rid of offset
   mle_model <- 
     glm(Y_pooled ~ X_pooled + Z_pooled - 1, family = 'poisson', offset = D_pooled)
   mu[1,] <- mle_model$coefficients[1:n_lags]
@@ -115,6 +132,31 @@ gibbs_sampler <- function(X, Y, Z, D,
   
   ### Loop over iterations
   for(t in 2:n_iter) {
+    
+    ### Update Beta
+    ### NOTE: Convergence issues probably due to this being fake data
+    ### NOTE: Can make this run in parallel if we need more speed
+    beta <- 
+      update_beta(theta = theta[t-1,,],
+                  X = X,
+                  Y = Y,
+                  Z = Z,
+                  D = D,
+                  beta_prev = beta)
+    
+    ### Update Theta
+    ### Omega_gamma here is the covariance matrix (not scaled by sigma_eta)
+    Omega_gamma <- 
+      build_sigma(gamma1 = gamma[t-1, 1],
+                  gamma2 = gamma[t-1, 2],
+                  n_lags = n_lags,
+                  sigma2 = 1)
+    
+    ### Use this code later
+    B <- (sigma2_gamma *  Omega_gamma) * solve(Sigma[[c]] + (sigma2_gamma *  Omega_gamma))
+    
+    
+    
     
     
   }
