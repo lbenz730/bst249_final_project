@@ -40,15 +40,16 @@ gibbs_sampler <- function(X, Y, Z, D,
            dimnames = list(1:n_iter, dimnames(X)[[3]]))
   
   ### Eta
-  ### 3-D array where first dim is iteration, and next 2 are matrix of n_counties x 2 (since we have eta 1 and eta 2)
+  ### 2-D matrix where first dim (rows) is iteration and 2nd dim (cols) is eta_1 or eta_2
   eta <- 
-    array(data = NA,
-          dim = c(n_iter, n_counties, 2),
-          dimnames = list(1:n_iter, dimnames(X)[[1]], paste0('eta_', 1:2)))
+    matrix(data = NA, 
+           nrow = n_iter, 
+           ncol = 2, 
+           dimnames = list(1:n_iter, paste0('eta_', 1:2)))
   
   ### Sigma^2 eta
-  ### 1-D vector (n_counties)
-  sigma2_eta <- rep(NA, n_counties)
+  ### (just 1 number that wil be fixed)
+  sigma2_eta <- NA
   
   ### Gamma
   ### 2-D matrix where first dim (rows) is iteration and 2nd dim (cols) is gamma_1 or gamma_2
@@ -78,13 +79,6 @@ gibbs_sampler <- function(X, Y, Z, D,
     ### Beta
     beta[c,] <- unname(coeff[-c(1:n_lags)])
     
-    ### Eta (Random Draw from Prior)
-    eta[1,c,] <- runif(2, min = eta_hyperpriors[1], max = eta_hyperpriors[2])
-    
-    ### Sigma2_eta
-    ### 10x the variance of the MLE of theta[c][0]
-    sigma2_eta[c] <- 10 * summary(mle_model)$coefficients[1, 'Std. Error']^2
-    
     ### Build X, Y, Z, pooled
     if(c == 1) {
       X_pooled <- X[c,,]
@@ -97,7 +91,6 @@ gibbs_sampler <- function(X, Y, Z, D,
       Z_pooled <- rbind(Z_pooled, Z[c,,])
       D_pooled <- c(D_pooled, rep(D[c], n_days))
     }
-    
   }
   
   ### Mu (MLE from pooled poisson regression)
@@ -108,12 +101,18 @@ gibbs_sampler <- function(X, Y, Z, D,
   ### Gamma (Random Draw from Prior)
   gamma[1,] <- runif(2, min = gamma_hyperpriors[1], max = gamma_hyperpriors[2])
   
+  ### Eta (Random Draw from Prior)
+  eta[1,] <- runif(2, min = eta_hyperpriors[1], max = eta_hyperpriors[2])
+  
   ### Sigma2 Gamma
-  ### 10x the variance of the MLE of theta[c][0]
+  ### 10x the variance of the MLE of mu0
   sigma2_gamma <- 10 * summary(mle_model)$coefficients[1, 'Std. Error']^2
   
+  ### Sigma2_eta
+  ### 10x the variance of the MLE of mu0
+  sigma2_eta <- 10 * summary(mle_model)$coefficients[1, 'Std. Error']^2
   
-  ### 
+  
   ### Loop over iterations
   for(t in 2:n_iter) {
     
