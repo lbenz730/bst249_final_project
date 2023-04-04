@@ -87,9 +87,18 @@ resp_data <- construct_data_matrices(df = resp, covariates = c('tmmx', 'rmax'))
 
 
 
-
 X <- cvd_data$X
 Y <- cvd_data$Y
 Z <- cvd_data$Z
 D <- cvd_data$D
 
+t0 <- Sys.time()
+draws <- 
+  gibbs_sampler(X = cvd_data$X, 
+                Y = cvd_data$Y,
+                Z = cvd_data$Z, 
+                D = cvd_data$D,
+                burn_in = 10, 
+                n_samples = 500)
+t1 <- Sys.time()
+t1 - t0
