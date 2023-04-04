@@ -1,21 +1,24 @@
 library(truncnorm)
 
 ### Compute Beta via profile likelihood approach
-update_beta <- function(theta, X, Y, Z, D, beta_prev) {
+### This involves using theta and X in the offset to only estimate the 
+### parameters for Z (beta)
+update_beta <- function(theta, X, Y, Z, D) {
   beta <- matrix(NA, nrow = dim(X)[1], ncol = dim(Z)[3])
   for(c in 1:n_counties) {
     mle_model <- 
       glm(Y[c,] ~ Z[c,,] - 1, 
           family = 'poisson', 
-          offset = exp(X[c,,] %*% theta[c,]) * rep(D[c], n_days),
-          start = beta_prev[c,])
+          offset = log(exp(X[c,,] %*% theta[c,]) * rep(D[c], n_days)))
     beta[c,] <- mle_model$coefficients
     
   }
   return(beta)
 }
 
-
+####################
+### Main Sampler ###
+####################
 gibbs_sampler <- function(X, Y, Z, D, 
                           n_samples, 
                           burn_in, 
@@ -86,7 +89,7 @@ gibbs_sampler <- function(X, Y, Z, D,
     ### Beta and Theta
     ### Take MLE from Poisson GLM
     ### No intercept since I already included 1 column in the Z
-    mle_model <- glm(Y[c,] ~ X[c,,] + Z[c,,] - 1, family = 'poisson', offset = rep(D[c], n_days))
+    mle_model <- glm(Y[c,] ~ X[c,,] + Z[c,,] - 1, family = poisson(link = 'log'), offset = log(rep(D[c], n_days)))
     coeff <- mle_model$coefficients
     
     ### Theta
@@ -112,7 +115,7 @@ gibbs_sampler <- function(X, Y, Z, D,
   ### Mu (MLE from pooled poisson regression)
   ### No convergence right now unless I get rid of offset
   mle_model <- 
-    glm(Y_pooled ~ X_pooled + Z_pooled - 1, family = 'poisson', offset = D_pooled)
+    glm(Y_pooled ~ X_pooled + Z_pooled - 1, family = 'poisson', offset = log(D_pooled))
   mu[1,] <- mle_model$coefficients[1:n_lags]
   
   ### Gamma (Random Draw from Prior)
@@ -133,18 +136,19 @@ gibbs_sampler <- function(X, Y, Z, D,
   ### Loop over iterations
   for(t in 2:n_iter) {
     
-    ### Update Beta
-    ### NOTE: Convergence issues probably due to this being fake data
-    ### NOTE: Can make this run in parallel if we need more speed
+    ###################
+    ### Update Beta ###
+    ###################
     beta <- 
       update_beta(theta = theta[t-1,,],
                   X = X,
                   Y = Y,
                   Z = Z,
-                  D = D,
-                  beta_prev = beta)
+                  D = D)
     
-    ### Update Theta
+    ####################
+    ### Update Theta ###
+    ####################
     ### Omega_gamma here is the covariance matrix (not scaled by sigma_eta)
     Omega_gamma <- 
       build_sigma(gamma1 = gamma[t-1, 1],

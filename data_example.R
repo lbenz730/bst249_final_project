@@ -6,27 +6,25 @@ source('sampler.R')
 
 ### Read in Data 
 ### First 2 columns of cvd.csv and resp.csv are just row #s so get rid of those
-### Cases[[1]] is fake outcome for CVD. I'll randomly shuffle it 
-### Cases[[2]] is fake outcome for resp. I'll randomly shuffle it 
-
-#### Think this causes convergence issues so what i'm gonna do tmrw is actually 
-#### Genderate counts based on the data and the lag values so we also know 
-### what the true coeffs are and we can see if it is working
 
 set.seed(6969)
 cases <- read_rds('sample_data/cases.rds')
 cases[[1]] <- sample(cases[[1]])
 cases[[2]] <- sample(cases[[2]])
 
+### Some coeff to generate fake data
+### This will be useful for debugging so we know what the truth is 
+theta_sim <- 0.0002 * seq(1, 0, length.out = 8)
+beta_sim <- c(-10, 0.005, 0.002)
+
+
 cvd <- 
   read_csv('sample_data/cvd.csv') %>% 
-  select(-c(1:2)) %>% 
-  mutate('n_cases' = cases[[1]])
+  select(-c(1:2)) 
 
 resp <- 
   read_csv('sample_data/resp.csv') %>% 
-  select(-c(1:2)) %>% 
-  mutate('n_cases' = cases[[2]])
+  select(-c(1:2)) 
 
 load('sample_data/gridmet_final.Rdata')
 
@@ -55,7 +53,16 @@ cvd <-
   group_split() %>% 
   map_dfr(~create_lag_df(.x, n_lags = 7, lag_var = 'PM25_mean_pred')) %>% 
   mutate('date' = as.Date(paste(year, month, day), '%Y %m %d')) %>% 
-  inner_join(confounders, by = c('date', 'fips'))
+  inner_join(confounders, by = c('date', 'fips')) 
+
+### Add in some Fake Cases
+M <- 
+  cvd %>% 
+  mutate('intercept' = 1) %>% 
+  select(contains('lag'), 'intercept', 'tmmx', 'rmax') %>% 
+  as.matrix() 
+lambda <- exp(M %*% c(theta_sim, beta_sim) + log(cvd$population))
+cvd$n_cases <- rpois(n = nrow(cvd), lambda = lambda)
 
 resp <- 
   resp %>% 
@@ -65,9 +72,21 @@ resp <-
   mutate('date' = as.Date(paste(year, month, day), '%Y %m %d')) %>% 
   inner_join(confounders, by = c('date', 'fips'))
 
+### Add in some Fake Cases
+M <- 
+  resp %>% 
+  mutate('intercept' = 1) %>% 
+  select(contains('lag'), 'intercept', 'tmmx', 'rmax') %>% 
+  as.matrix() 
+lambda <- exp(M %*% c(theta_sim, beta_sim) + log(cvd$population))
+resp$n_cases <- rpois(n = nrow(resp), lambda = lambda)
+
 ### Create X, Y, and Z matrices for each county
 cvd_data <- construct_data_matrices(df = cvd, covariates = c('tmmx', 'rmax'))
 resp_data <- construct_data_matrices(df = resp, covariates = c('tmmx', 'rmax'))
+
+
+
 
 X <- cvd_data$X
 Y <- cvd_data$Y
