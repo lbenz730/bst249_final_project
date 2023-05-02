@@ -291,8 +291,8 @@ gibbs_sampler <- function(X, Y, Z, D,
                   sigma2 = 1)
     
     ### Propose Eta 
-    eta1_prop <- runif(1, min = max(eta_hyperpriors[1], eta[t-1, 1] - 0.05), max = min(eta_hyperpriors[2], eta[t-1, 1] + 0.05))
-    eta2_prop <- runif(1, min = max(eta_hyperpriors[1], eta[t-1, 2] - 0.05), max = min(eta_hyperpriors[2], eta[t-1, 2] + 0.05))
+    eta1_prop <- runif(1, min = max(eta_hyperpriors[1], eta[t-1, 1] - 0.005), max = min(eta_hyperpriors[2], eta[t-1, 1] + 0.005))
+    eta2_prop <- runif(1, min = max(eta_hyperpriors[1], eta[t-1, 2] - 0.005), max = min(eta_hyperpriors[2], eta[t-1, 2] + 0.005))
     
     ### Accept/Reject Eta 1/2 (seperately)
     ### Eta 1
@@ -332,8 +332,8 @@ gibbs_sampler <- function(X, Y, Z, D,
     ### Update Gamma ###
     ####################
     ### Propose Gamma
-    gamma1_prop <- runif(1, min = max(gamma_hyperpriors[1], gamma[t-1, 1] - 0.05), max = min(gamma_hyperpriors[2], gamma[t-1, 1] + 0.05))
-    gamma2_prop <- runif(1, min = max(gamma_hyperpriors[1], gamma[t-1, 2] - 0.05), max = min(gamma_hyperpriors[2], gamma[t-1, 2] + 0.05))
+    gamma1_prop <- runif(1, min = max(gamma_hyperpriors[1], gamma[t-1, 1] - 0.005), max = min(gamma_hyperpriors[2], gamma[t-1, 1] + 0.005))
+    gamma2_prop <- runif(1, min = max(gamma_hyperpriors[1], gamma[t-1, 2] - 0.005), max = min(gamma_hyperpriors[2], gamma[t-1, 2] + 0.005))
     
     ### Accept/Reject Gamma 1/2 (seperately)
     ### Gamma1
