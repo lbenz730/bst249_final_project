@@ -15,8 +15,8 @@ theme_set(theme_bw() +
                   plot.caption = element_text(size = 10),
                   legend.position = "bottom"))
 
-cvd_draws <- read_rds('~/Dropbox (Harvard University)/Bayesian/draws_cvd.rds')
-resp_draws  <- read_rds('~/Dropbox (Harvard University)/Bayesian/draws_resp.rds')
+cvd_draws <- read_rds('~/Dropbox (Harvard University)/Bayesian/draws_cvd2.rds')
+resp_draws  <- read_rds('~/Dropbox (Harvard University)/Bayesian/draws_resp2.rds')
 
 
 ### CVD Analysis
@@ -60,7 +60,8 @@ cvd_draws$mu %>%
   labs(x = 'Iteration',
        y = 'mu',
        title = 'Trace Plots for National Avg. Distributed Lag',
-       subtitle = 'Coronary Artery Disease')
+       subtitle = 'Coronary Artery Disease') + 
+  theme(legend.position = 'none')
 
 ggsave('figures/cad_trace_plots.png', height = 9/1.2, width = 16/1.2)
 
@@ -96,7 +97,8 @@ ggplot(cvd_theta, aes(x = lag, y = mean)) +
   labs(x = '# of Lags',
        y = expression(paste('% Increase in Admissions due to 10', mu, 'g/m'^3, ' increase in ', PM[2.5])),
        title = 'County Average Distributed Lag Function',
-       subtitle = 'Coronary Artery Disease')
+       subtitle = 'Coronary Artery Disease') +
+  theme(legend.position = 'none')
 
 ggsave('figures/cad_county_avg.png', height = 9 * 1.2, width = 16 * 1.2)
 
@@ -167,7 +169,8 @@ resp_draws$mu %>%
   labs(x = 'Iteration',
        y = 'mu',
        title = 'Trace Plots for National Avg. Distributed Lag',
-       subtitle = 'Chronic Obstructive Pulmonary Disease')
+       subtitle = 'Chronic Obstructive Pulmonary Disease') +
+  theme(legend.position = 'none')
 
 ggsave('figures/resp_trace_plots.png', height = 9/1.2, width = 16/1.2)
 
